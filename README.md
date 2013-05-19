@@ -648,7 +648,7 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 
 ということで第一回目の仕様。第一回と書いてあるのはおそらく一発では決まらないからです。
 
-**CSVKVSドライバ仕様**
+**TSVKVSドライバ仕様**
 
 ファイル名を渡して初期化、インスタンス化し、キーに基づいて情報の格納、取り出しを行う。データの格納先はコンストラクタに渡したファイル名を持つファイル。
 メソッドは
@@ -658,7 +658,58 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 
 今のところこれだけ。
 
-んじゃ、テスト書いてみまっしょい。
+さて、これだけの仕様からテストを考えてみる。ファイル名を渡して初期化するのだから、コンストラクタはファイル名を取りまするね。で、APIは先ほどの二つ。Errorは一応カスタムで定義しておきます。で、とりあえずモジュール用のディレクトリを作成し、現時点でのREADMEファイルを作成して、仕様を書き起こしてみます。
+
+	# TSVKVS
+	
+	This module provides KVS service using TSV.
+	
+	## Install
+	
+	npm install tsvkvs
+	
+	## Usage
+	
+	Create a server for TSVKVS service. The constructor takes a filename for data storage.
+	
+	    var TsvKvs = require('tsvkvs');
+	    var tkServer = new TsvKvs.Server('./data.tsv');
+	    var TsvKvsError = TsvKvs.Error;
+	
+	The server object emits 2 events
+	
+	    tkServer.on('connect', function() {}); // TsvKvs service is available
+	    tkServer.on('error' function(err) {}); // An error ocurred in the TsvKvs server
+	
+	After connectiong, we can set/get a value
+	
+	    var key = 'a';
+	
+	    tk.set(key, 'test1', function(err, result) {
+	      if(err) {
+	        throw new TsvKvsError(err);
+	      }
+	      if(result){
+	        console.log('stored value for '+key);
+	      } else {
+	        console.log('not stored value for '+key);
+	      }
+	    });
+	
+	    tk.get(key, function(err, result) {
+	      if(err) {
+	        throw new TsvKvsError(err);
+	      }
+	      if(result){
+	        console.log('got value for '+key);
+	      } else {
+	        console.log('got no value for '+key);
+	      }
+	    });
+
+こんな感じとして、テストのテンプレートを作成してtestディレクトリに格納しておきます。モジュールのファイル構成としてはモジュールのルートにindex.jsを置いてlib以下のファイル群を参照するかたちでいいかな？
+
+
 ってか書いている途中です。追いつけ追い越せいやダメだ負けるな抜かせるな。という最前線が・・・
 
 ---------------------------------------------ココ--------------------------------------------

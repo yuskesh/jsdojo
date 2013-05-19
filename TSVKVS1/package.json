@@ -1,0 +1,19 @@
+{
+  "name": "TSVKVS1",
+  "version": "0.0.1",
+  "description": "This module provides KVS service using TSV.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "readmeFilename": "README.md",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "devDependencies": {
+    "mocha": "1.9.0"
+  }
+}
