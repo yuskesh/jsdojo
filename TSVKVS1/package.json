@@ -1,7 +1,7 @@
 {
   "name": "TSVKVS1",
   "version": "0.0.1",
-  "description": "This module provides KVS service using TSV.",
+  "description": "This module provides KVS service using TSV format.",
   "main": "index.js",
   "directories": {
     "test": "test"

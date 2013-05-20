@@ -16,7 +16,12 @@ suite('Test Error', function(){
   suiteTeardown(function(done) {
     done();
   });
-  test('test error...', function(done){
-    done();
+  test('test TsvKsvError name', function(){
+    var tkError = new TsvKsvError('error ocurred');
+    tkError.name = 'TsvKsvError';
+  });
+  test('test TsvKsvError name', function(){
+    var tkError = new TsvKsvError('error ocurred');
+    tkError.name = 'TsvKsvError';
   });
 });

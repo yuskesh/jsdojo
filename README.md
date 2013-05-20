@@ -4,11 +4,13 @@
 
 Node.jsを利用したプログラムでのエラーハンドリングについて。
 
-* Try-Catch
-* コールバックでのエラー処理
-* Errorオブジェクトの拡張
-* Errorイベント
-* uncaughtException、またはDomainを使ったエラーハンドリング
+- Try-Catch
+- コールバックでのエラー処理
+- Errorオブジェクトの拡張
+- Errorイベント
+- uncaughtException、またはDomainを使ったエラーハンドリング
+- [ ] フローコントロールライブラリを利用したエラーハンドリング
+- [ ] ループ中のエラーハンドリング
 
 ### try-catch
 
@@ -71,7 +73,7 @@ Node.jsのプログラム中ではコールバック関数が多用されます�
     hello(1, callback);
     hello(2, callback);
 
-ここでは単純に、是が非でもコールバックの第一引数は_エラー_と覚えておいてください。
+ここでは単純に、是が非でもコールバックの第一引数はエラーと覚えておいてください。
 
 
 ### Errorオブジェクトの拡張
@@ -81,12 +83,11 @@ JavaScriptにErrorオブジェクトがあるのはご存知の通り。
 Nodeを使っているとこの中でも、`TypeError`や`ReferenceError`を見ることが多いのではないでしょうか。Node.jsを利用して何度もこれらのエラーが発生しているのを見るうちに、だいたい原因が何か、つかめるようになってきます。
 例えば `TypeError` は関数へ渡されるプロパティが `Undefined` であるときに、そのプロパティを参照しようとして発生していることが多いですね。
 
-Errorオブジェクトはシステムによる上記のエラーオブジェクトの生成の他に、もちろん`new`によって生成する事が可能です。
-致命的な不整合が起きた場合などに、
+Errorオブジェクトはシステムによる上記のエラーオブジェクトの生成の他に、もちろん`new`によって生成する事が可能です。致命的な不整合が起きた場合などに、
 
     throw new Error("A fatal error ocurred");
 
-などとして例外を投げる場合も多々あります。また、コールバックへの第一引数にErrorオブジェクトを渡す場合ももちろんあります。その場合に呼び出し元でエラーハンドリングを行うわけですが、エラーオブジェクトの種別を個別にしておくことでエラー発生時にエラーの種類に応じて処理を分岐する事が可能となります。
+などとして例外を投げる場合もあるでしょうし、コールバックへの第一引数にErrorオブジェクトを渡す場合ももちろんあります。エラー発生時には呼び出し元でエラーハンドリングを行うわけですが、エラーオブジェクトの種別を個別にしておくことでエラー処理を分岐する事が可能となります。
 
 そのようなケースを考えてみましょう。ログインの必要なアプリケーションにおいては認証ロジックが組み込まれていますが、単純にIDやパスワードが間違っており、認証が失敗するパターン。もしくは認証情報が含まれているストレージへの接続ができないパターンなどがあります。
 
@@ -282,9 +283,9 @@ Errorオブジェクトはシステムによる上記のエラーオブジェク
         at Object._onTimeout (/ErrorEvent/errorEmitter.js:7:8)
         at Timer.list.ontimeout (timers.js:101:19)
 
-このようなエラーが発生してプログラムが途中で終了しているのがわかります。_whoa_というイベントが発生しているときには処理が継続されるのに対して、_error_イベントが発生した場合には処理が途中で止まってしまうのは、_error_という名前のイベントというのが少々特殊なためで、これを適切に処理しないとプログラムが終了してしまうのです。
+このようなエラーが発生してプログラムが途中で終了しているのがわかります。whoaというイベントが発生しているときには処理が継続されるのに対して、errorイベントが発生した場合には処理が途中で止まってしまうのは、errorという名前のイベントというのが少々特殊なためで、これを適切に処理しないとプログラムが終了してしまうのです。
 
-ですので、_error_イベントをemitするものに対しては適切なエラーハンドリングが必要になります。以下のように、`on`で_error_イベントを適切に処理するようにしましょう。
+ですので、errorイベントをemitするものに対しては適切なエラーハンドリングが必要になります。以下のように、`on`でerrorイベントを適切に処理するようにしましょう。
 
     var EventEmitter = require('events').EventEmitter;
     var util = require('util');
@@ -510,7 +511,7 @@ APIはこちら
 
 [should.js(github)](https://github.com/visionmedia/should.js)
 
-ただ、Object の Prototype を拡張することにはいささか問題もあり、たとえば値が undefined や null であるオブジェクトに対して should を利用することはできません。実際にテストを書く場合、こちらがネックとなることが予想されます。
+ただ、Object の Prototype を拡張することにはいささか問題もあり、たとえば値が `undefined` や `null` であるオブジェクトに対して should を利用することはできません。実際にテストを書く場合、こちらがネックとなることが予想されます。
 
 ### expect
 
@@ -540,7 +541,7 @@ assertionライブラリ自体、APIを少し覚えるだけで、使い方自�
 
 ## テストフレームワークの利用
 
-### mochaとは
+### mocha について
 
 Node.jsで利用可能なテストフレームワークにはいろいろありますが、今ではmochaが一番使われているのではないでしょうか？必要十分な機能を持ち、うっかりミスによるグローバル変数の検知なども可能です。これ一点でmochaに決めても良いくらい。というのも、例えばあなたの作ったglobal leakage付きモジュールが誰かのモジュールから利用される場合、その相手側のモジュールがmochaを使うとあなたのモジュールでエラーが発生してしまうのです。そういう、ちょっとこっぱずかしい思いをしないためにもmochaを使うべきでしょう。(と思ったらmochaの最新版ではこのチェックがデフォルトでは有効ではなくなっている！＠＃＄！！ので、`--check-leaks`オプションを付けて実行するようにしましょう。)
             
@@ -641,6 +642,41 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 
 数あるsuiteやtestのうち、一つだけ実行したい場合は`.only`を利用します。`test.only('Only this test will be executed', function(){})`などと記述すると、こちらのtestのみが実行されます。また、suiteやtestをスキップすることも可能で、それには`.skip`を利用します。
 
+### Test Runner を自作してみる
+
+今の時代BDDやらTDD、ATDDなどなどたくさんテストの種類はありますがいずれも基礎となるのは関数のテスト、つまり関数に引数を渡し、期待する出力が得られるどうかをチェックするテストがユニットテストです。で、そのテストを走らせるのがTest Runner。mochaコマンドもTest Runnerですね。
+
+もし、Test Runnerを自作してみたら・・・ひょっとしたらテストへの理解が深まるかもしれない！ということでテストランナーを自作してみましょう。仕様はこちら！
+
+[CommonJSのユニットテスト仕様](http://wiki.commonjs.org/wiki/Unit_Testing/1.0)
+
+資料内にTestの仕様が書いてありますね。Testモジュールはユニットテストを実行し、テスト結果の一覧を作成する。"run"メソッドは失敗したテストの件数を返す必要がある、と。
+で、"run"メソッドはどのようなオブジェクトであっても受け入れる必要があり、runはそオブジェクトをスキャンし、全ての関数とオブジェクトの
+
+13. run must accept any Object, usually a unit test module's exports. "run" will scan the object for all functions and object properties that have names that begin with but are not equal to "test", and other properties for specific flags. Sub-objects with names that start with but are not equal to "test" will be run as sub-tests.
+
+
+
+そのユニットテスト
+
+
+テストケース
+
+
+テストスイート
+
+
+テストランナー
+
+fixture
+
+TestRunnerの構造
+テストスイート・テストケースの取得
+テストの実行
+テスト結果の表示、テスト結果のAssertionライブラリへの移行
+
+テスト結果を表示させる部分
+
 
 ### Testの実際
 
@@ -673,8 +709,8 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 	Create a server for TSVKVS service. The constructor takes a filename for data storage.
 	
 	    var TsvKvs = require('tsvkvs');
-	    var tkServer = new TsvKvs.Server('./data.tsv');
-	    var TsvKvsError = TsvKvs.Error;
+	    var tk = new TsvKvs.Driver('./data.tsv');
+	    var TKError = TsvKvs.Error;
 	
 	The server object emits 2 events
 	
@@ -687,7 +723,7 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 	
 	    tk.set(key, 'test1', function(err, result) {
 	      if(err) {
-	        throw new TsvKvsError(err);
+	        throw err;
 	      }
 	      if(result){
 	        console.log('stored value for '+key);
@@ -698,7 +734,7 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 	
 	    tk.get(key, function(err, result) {
 	      if(err) {
-	        throw new TsvKvsError(err);
+	        throw err;
 	      }
 	      if(result){
 	        console.log('got value for '+key);
@@ -707,8 +743,19 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 	      }
 	    });
 
-こんな感じとして、テストのテンプレートを作成してtestディレクトリに格納しておきます。モジュールのファイル構成としてはモジュールのルートにindex.jsを置いてlib以下のファイル群を参照するかたちでいいかな？
+こんな感じとして（publicなnpmモジュールにする予定はないのにInstallのところで`npm install tsvkvs`などとしてしまった・・・）、テストのテンプレートを作成してtestディレクトリに格納しておきます。モジュールのファイル構成としてはモジュールのルートにindex.jsを置いてlib以下のファイル群を参照するかたちでいいかな？とりあえずここまでのものをTSVKVS1ディレクトリに格納しておきました。
 
+では実際にテストを作成してみます。
+
+クラスについてですが、今のところ、データ操作するドライバクラス、またデータ操作中のエラーを通知するエラークラスになるでしょうか。手軽なほうからテストを作成していきましょう。ということでまずはエラークラスのテストから。この時点で予測されるエラーは、ファイルがない、あるいはファイルのオープンに失敗といったものでしょう。なのでファイルI/Oのエラークラス。あとはデータ操作自体に失敗するという可能性を考えてデータ操作エラークラスを定義します。冗長になりますが、どちらにも共通の基底クラスを持たせます。
+
+基底クラスをTsvKvsError、子クラスをFileErrorとManupilationErrorクラスとしてみましょう。
+
+
+
+
+
+それにしてもgithubで資料書くの、かなり楽ですね。まだsyntax等覚えなければならない事は結構ありますが、Markdownでがんがん編集して良いものに近づいて行けるというのはイイ！
 
 ってか書いている途中です。追いつけ追い越せいやダメだ負けるな抜かせるな。という最前線が・・・
 
