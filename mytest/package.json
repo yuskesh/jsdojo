@@ -1,0 +1,19 @@
+{
+  "name": "mytest",
+  "version": "0.0.1",
+  "description": "my first test module",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "mocha": "~1.10.0"
+  }
+}

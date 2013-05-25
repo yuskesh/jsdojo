@@ -1,6 +1,6 @@
 # TSVKVS
 
-This module provides KVS service using TSV.
+This module provides KVS service using TSV format.
 
 ## Install
 

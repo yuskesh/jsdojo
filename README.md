@@ -16,11 +16,13 @@ Node.jsを利用したプログラムでのエラーハンドリングについ�
 
 JavaScript では発生した例外の補足に try-catch 文を利用できますね。
 
-    try {
-        functionThrowsException();
-    } catch (error) {
-        console.log(error)
-    }
+```javascript
+try {
+    functionThrowsException();
+} catch (error) {
+    console.log(error)
+}
+```
 
 ただし、この `functionThrowsException()` という関数は非同期関数ではない必要があります。
 
@@ -28,21 +30,23 @@ JavaScript では発生した例外の補足に try-catch 文を利用できま�
 
 例：asyncTryCatch.js
 
-    function asyncFunc() {
-      setTimeout(function(){
-        throw new Error('error!');
-      },1);
-    }
-    
-    function asyncTryCatch() {
-      try {
-        asyncFunc();
-      } catch (error) {
-        console.log('Caught: ' + error); // can't handle the thrown error.
-      }
-    }
-    
-    asyncTryCatch();
+```javascript
+function asyncFunc() {
+  setTimeout(function(){
+    throw new Error('error!');
+  },1);
+}
+
+function asyncTryCatch() {
+  try {
+    asyncFunc();
+  } catch (error) {
+    console.log('Caught: ' + error); // can't handle the thrown error.
+  }
+}
+
+asyncTryCatch();
+```
 
 この例では`catch`で例外を補足しきれず、プログラムがエラー終了してしまいます。
 
@@ -74,6 +78,7 @@ Node.jsのプログラム中ではコールバック関数が多用されます�
     hello(2, callback);
 
 ここでは単純に、是が非でもコールバックの第一引数はエラーと覚えておいてください。
+あ、あとですね、コールバックを引数に取る関数を作る場合ですが、Nodeにおいてはコールバックは一番最後の引数になることも覚えておいてくださいね。
 
 
 ### Errorオブジェクトの拡張
@@ -644,43 +649,167 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 
 ### Test Runner を自作してみる
 
-今の時代BDDやらTDD、ATDDなどなどたくさんテストの種類はありますがいずれも基礎となるのは関数のテスト、つまり関数に引数を渡し、期待する出力が得られるどうかをチェックするテストがユニットテストです。で、そのテストを走らせるのがTest Runner。mochaコマンドもTest Runnerですね。
+今の時代BDDやらTDD、ATDDなどなどたくさんテストの種類はありますがいずれも基礎となるのは関数のテスト、つまり関数に引数を渡し、期待する出力が得られるどうかをチェックするテストがユニットテストです。で、そのテストを走らせるのがTest Runner。mochaコマンドもTest Runnerを含んでいます。
 
-もし、Test Runnerを自作してみたら・・・ひょっとしたらテストへの理解が深まるかもしれない！ということでテストランナーを自作してみましょう。仕様はこちら！
+もし、Test Runnerを自作してみたら・・・テストへの理解が深まるかもしれない！ということでテストランナーを自作してみましょう。仕様はこちら！
 
-[CommonJSのユニットテスト仕様](http://wiki.commonjs.org/wiki/Unit_Testing/1.0)
+[CommonJSのユニットテスト仕様1.0](http://wiki.commonjs.org/wiki/Unit_Testing/1.0)
 
-資料内にTestの仕様が書いてありますね。Testモジュールはユニットテストを実行し、テスト結果の一覧を作成する。"run"メソッドは失敗したテストの件数を返す必要がある、と。
-で、"run"メソッドはどのようなオブジェクトであっても受け入れる必要があり、runはそオブジェクトをスキャンし、全ての関数とオブジェクトの
+1.1もあるのですが、なるべく簡単にするために1.0にします。で、資料内にTestの仕様が書いてありますね。Testモジュールはユニットテストを実行し、テスト結果の一覧を作成する。"run"メソッドは失敗したテストの件数を返す必要がある、と。
+で、"run"メソッドはどのようなオブジェクトであっても受け入れる必要があり、runはオブジェクトをスキャンし、名前が"test"から始まるが"test"ではない全ての関数を抜き出します。そのようなネーミングを持つサブオブジェクトはサブテストとして実行されます。
 
-13. run must accept any Object, usually a unit test module's exports. "run" will scan the object for all functions and object properties that have names that begin with but are not equal to "test", and other properties for specific flags. Sub-objects with names that start with but are not equal to "test" will be run as sub-tests.
+この辺はもう、いろいろな言語に存在するユニットテストフレームワークとほぼ一緒ですね。
+
+ということでこれらを実装してみましょう。テストを作りながら！
+
+mochaのようにディレクトリを指定されなかった場合はデフォルトではtestディレクトリ以下に設置されている`test*.js`ファイルをテストみなして実行するようにしましょうか。仕様にはありませんが便宜のため、そうしておきます。
+
+自作のテストモジュール名はmytestとしますね。
+最初にmytestというディレクトリを作成し、いろいろと必要なファイルを作成します。
+
+最初はmytestのディレクトリ構造をこんな感じで作っておきます。README.mdは適当に。
+
+```
+mytest
+├── README.md
+├── index.js
+├── package.json
+└── test
+    └── mocha.opts
+```
+
+で、index.jsの中身はとりあえず空でいいです。
+
+``` sh
+touch index.js
+mkdir test
+vi test/mocha.opts
+```
+
+mocha.optsの内容は
+
+```
+--ui tdd
+--reporter spec
+--check-leaks
+```
+
+こんな感じにして作成します。UIにtdd、Reporterにspecを利用し、グローバルリークの検出をオンにしておきます。で、ここまでやってから"npm init"コマンドでpackage.jsonファイルを作成します。"npm init"コマンドを利用するといろいろ聞かれますが、わからないところはすっ飛ばしておいてもかまいません。
+
+```
+{
+  "name": "mytest",
+  "version": "0.0.1",
+  "description": "my first test module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD"
+}
+```
+
+package.jsonを作成したら、mochaをインストールしてpackage.jsonを編集し、"npm test"で実行可能なようにします。
+
+```
+npm install mocha --save-dev
+```
+
+--save-devオプションを付けてインストールすることで同じディレクトリにあるpackage.jsonファイルにmochaへの依存性（devDependencyエントリ）が追加されるのでらくちんです。mochaのインストールが終わったら次に"npm test"コマンドでmochaが実行されるようにします。先ほどのpackage.jsonファイルを編集し、
+
+```
+  "scripts": {
+    test": "./node_modules/mocha/bin/mocha"
+  },
+```
+
+と、mochaコマンドへの相対パスを記述します。
+編集が終わりましたら実際に"npm test"コマンドを走らせてmochaがちゃんと動作するか確認しましょう。
+
+```
+$ npm test
+
+> mytest@0.0.1 test /Users/me/jsdojo/github/jsdojo/mytest
+> ./node_modules/mocha/bin/mocha
 
 
 
-そのユニットテスト
+  0 tests complete (1 ms)
+```
+
+では実際にテストを書いて行きます。
+
+Testモジュールはユニットテストを実行し、テスト結果の一覧を作成する。"run"メソッドは失敗したテストの件数を返す必要がある、と。
+で、"run"メソッドはどのようなオブジェクトであっても受け入れる必要があり、runはオブジェクトをスキャンし、名前が"test"から始まるが"test"ではない全ての関数とオブジェクトを抜き出します。そのようなネーミングを持つサブオブジェクトはサブテストとして実行されます。
+
+この辺はもう、いろいろな言語に存在するユニットテストフレームワークとほぼ一緒ですね。
+
+ということでこれらを実装してみましょう。テストを作りながら！
+
+mochaのようにディレクトリを指定されなかった場合はデフォルトではtestディレクトリ以下に設置されている`test*.js`ファイルをテストみなして実行するようにしましょうか。仕様にはありませんが便宜のため、そうしておきます。
+
+テスト項目は今のところ
+
+* テスト対象はtestディレクトリ以下の`test*.js`とする。
+* "run"メソッドを持つ
+* "run"メソッドはどのようなオブジェクトであっても受け入れる。
+* "run"メソッドは名前が"test"から始まるが"test"ではない全ての関数とオブジェクトを抜き出す。
+* "run"メソッドは名前が"test"から始まるが"test"ではないサブオブジェクトはサブテストとして見なされる。
+* ユニットテストを実行する。
+* "run"メソッドは失敗したテストの件数を返す必要がある。
+* テスト結果の一覧を作成する
+
+このくらいかな？一応時系列っぽく並べてみました。これらの項目でまずはっきりしない項目があればまず洗い出しましょう。サブオブジェクトとサブテスト、よくわかりませんね。あとユニットテストの定義がこの時点でははっきりしません。
+また、テストを実行する時にはどのようにこのモジュールを利用するのかがわかりません。
+
+サブオブジェクトに関してですが、例えば
+
+```
+exports = {
+  testParent : {
+    testChild : function(){
+    }
+  }
+};
+```
+
+こういう形式のオブジェクトがある場合のtestChildがサブオブジェクトであり、また関数であることからサブテストとして見なす、ということですね。
+
+テスト実行時のモジュールの利用についてですが、コマンドを利用してテストをすることにしましょう。mochaなどのように"mytest"と実行すると全てのテストを実行します。
+
+また、クラス構成についてですが、Runnerというクラスを持たせ、そこにrun()メソッドを持たせます。これもテスト項目に入れておきましょう。
+
+では実際にmochaを利用してテストを作成します。assertionモジュールは標準のassertを利用します。mytestのエントリポイントはindex.jsですのでtestディレクトリからの相対パスでindex.jsを指定してそれをrequrieします。簡単なテストですので現時点ではsetup()もteardown()も必要ありません。
+
+```
+var assert = require('assert'),
+    util = require('util');
+var mytest = require('../index.js');
+
+suite('mytestTestSuite', function(){
+  test('test hasRunner');
+  test('Runner class has run method');
+  test('run method accepts any object');
+  test('run method extract all functions and objects named begin with test but not test');
+  test('run method extract sub-object');
+  test('run method run unit tests');
+  test('run method return a number of failed tests');
+  test('run method make list of test result');
+});
+```
+
+とりあえず項目だけ上げておきました。
 
 
-テストケース
 
 
-テストスイート
-
-
-テストランナー
-
-fixture
-
-TestRunnerの構造
-テストスイート・テストケースの取得
-テストの実行
-テスト結果の表示、テスト結果のAssertionライブラリへの移行
-
-テスト結果を表示させる部分
 
 
 ### Testの実際
 
-では実際にTestを書く事にしましょうか。まずはモジュールレベルから書く事にします。モジュールはそうですね、非同期のモジュールじゃないと面白くないので、CSVを利用したKVSっぽいものにでもしましょうか。
+ではさらにTestを書く事にしましょうか。まずはモジュールレベルから書く事にします。モジュールはそうですね、非同期のモジュールじゃないと面白くないので、CSVを利用したKVSっぽいものにでもしましょうか。
 
 ということで第一回目の仕様。第一回と書いてあるのはおそらく一発では決まらないからです。
 
@@ -751,8 +880,11 @@ TestRunnerの構造
 
 基底クラスをTsvKvsError、子クラスをFileErrorとManupilationErrorクラスとしてみましょう。
 
+# Job automation with Gruntjs
 
+# Continuous integration with Travis.CI
 
+# Debug and Profiling Node.js application
 
 
 それにしてもgithubで資料書くの、かなり楽ですね。まだsyntax等覚えなければならない事は結構ありますが、Markdownでがんがん編集して良いものに近づいて行けるというのはイイ！
