@@ -581,7 +581,7 @@ Node.jsで利用可能なテストフレームワークにはいろいろあり�
 	  });
 	});
 
-また、mochaでは結果表示の形式も様々です。どのような表示形式があるかは[こちら](http://visionmedia.github.io/mocha/#reporters)を参照してみてください。指定自体は`"--reporter"`オプションによって指定します。
+また、mochaでは結果表示の形式も様々です。どのような表示形式があるかは[こちら](http://mochajs.org/#reporters)を参照してみてください。指定自体は`"--reporter"`オプションによって指定します。
 これら`"--ui"`や`"--reporter"`といったオプションは`test`ディレクトリ配下の`"mocha.opts"`ファイル内に記述することも可能です。今回はspec形式で表示させるようにして、UIオプションと一緒に`mocha.opts`内に書いておきます。
 
 // mocha.opts
